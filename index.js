@@ -199,7 +199,7 @@ const verifytoken =(req,res,next)=>{
     res.send(result)
   })
 
-  app.patch('/users/:id',verifyAdmin,verifytoken,async(req,res)=>{
+  app.patch('/users:id',verifyAdmin,verifytoken,async(req,res)=>{
     const id = req.params.id;
     const filter = {_id: new ObjectId(id)};
     const updateDoc = {
