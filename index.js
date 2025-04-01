@@ -34,6 +34,7 @@ async function run() {
           const users_collection= client.db('building').collection('users')
           const agrement_collection = client.db('building').collection('agrement')
           const payment_collection = client.db('building').collection('payments')
+          const service_collection = client.db('building').collection('service')
         
         
         
@@ -51,9 +52,9 @@ const verifytoken =(req,res,next)=>{
   const token = req.headers.authorization.split(' ')[1];
   jwt.verify(token,process.env.JWT_SECURE,(err,decoded)=>{
   if(err){
-    return res.status(401).send({message : 'unauthorized access'})
+    return res.status(403).send({ message: "Forbidden Access"})
   }
-  req.decoded= decoded;
+  req.decoded = decoded; 
   next()
   })
   
@@ -62,13 +63,11 @@ const verifytoken =(req,res,next)=>{
 
   const verifyAdmin = async(req,res,next)=>{
     const email = req.decoded.email;
-    const query = {email:email};
-    const user= await users_collection.findOne(query);
-    const isAdmin = user?.role === 'admin';
-    if(!isAdmin){
-      return res.status(403).send({message: 'forbidden access'})
+    const user = await users_collection.findOne({ email });
+    if (!user || user.role !== "admin") {
+      return res.status(403).send({ message: "Forbidden access" });
     }
-    next()
+    next();
   }
 
     app.get('/banner',async (req, res) => {
@@ -130,7 +129,12 @@ const verifytoken =(req,res,next)=>{
         const banner= await apartment_collection_post.find().toArray()
         res.send(banner)
       })
-
+      app.get('/Apartmente_colection/:id',async (req, res) => {
+        const user= req.params.email;
+        const email={email: user.email}
+        const result= await apartment_collection_post.findOne(email).toArray()
+        res.send(result)
+      })
     
     
   
@@ -192,23 +196,21 @@ const verifytoken =(req,res,next)=>{
     res.send(banner)
   })
 
-  app.delete('/users/:id',verifyAdmin,verifytoken,async(req,res)=>{
+  app.delete('/users/:id',async(req,res)=>{
     const id = req.params.id;
-    const query = {_id: new ObjectId(id)};
-    const result =await users_collection.deleteOne(query);
+    const query = { _id: new ObjectId(id)};
+    const result = await users_collection.deleteOne(query);
     res.send(result)
   })
 
-  app.patch('/users:id',verifyAdmin,verifytoken,async(req,res)=>{
+
+  app.patch('/users/:id',async(req,res)=>{
     const id = req.params.id;
-    const filter = {_id: new ObjectId(id)};
-    const updateDoc = {
-      $set: {
-          role: 'admin',
-      },
-  };
-    const result = await users_collection.updateOne(filter, updateDoc);
-    res.send(result)
+      const result = await users_collection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { role: "admin" } }
+      );
+      res.send(result);
    })
 
 
@@ -230,9 +232,20 @@ const verifytoken =(req,res,next)=>{
 
 
 
+//  sevice 
 
 
+app.get('/service',async (req,res) => {
+  const result = await service_collection.find().toArray();
+  res.send(result)
+  
+})
 
+app.post('/service',async(req,res)=>{
+  const user= req.body;
+  const result = await service_collection.insertOne(user)
+  res.send(result)
+})
 
 
     // payment 
@@ -276,6 +289,11 @@ app.get('/payments/:email',async(req,res)=>{
 })
 
 
+app.get('/',async(req,res)=>{
+  console.log("hellow");
+  res.send('Hello World!')
+  
+})
 
 
 
